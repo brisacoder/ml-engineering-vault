@@ -13,6 +13,7 @@ related:
   - "[[Accelerated Python - CPU Vectorization]]"
   - "[[NumPy Pandas Vectorization]]"
   - "[[GPU Library Decision Guide]]"
+  - "[[RAPIDS Environment Setup]]"
 source: "Notebook — accelerated_python_part2_gpu.ipynb"
 created: 2026-04-22
 updated: 2026-04-22
@@ -29,13 +30,19 @@ updated: 2026-04-22
 ## Compatibility Matrix
 
 ```
-CUDA       : 11.8 or 12.0/12.2/12.5
-Python     : 3.10, 3.11, 3.12
-pandas     : 2.0.x – 2.2.x (cuDF pins to a specific minor)
-RAPIDS     : 24.10, 24.12, 25.02
+CUDA       : 12.x (CUDA 11 dropped in 26.x)
+Python     : 3.11+ (cp311-abi3 stable ABI — 3.12 and 3.13 work)
+pandas     : >=2.0,<2.4.0 (tested with 2.3.3)
+numpy      : >=2.0,<2.6 (with cupy 14.x; >=1.26 with cupy 13.x)
+pyarrow    : >=19.0.0 (no upper bound; tested with 24.0.0)
+CuPy       : >=13.6.0, !=14.0.0 (tested with 14.0.1)
+numba      : >=0.60.0,<0.65.0 + numba-cuda[cu12] (separate pkg now)
+RAPIDS     : 26.4 (latest as of April 2026)
 ```
 
-**Known landmines:** cuDF pins pandas minor version; `cudf.pandas` must import *before* `import pandas`; ~95% API coverage with silent CPU fallback; RAPIDS conflicts with PyTorch conda envs; Windows is WSL2-only.
+**Known landmines:** cuDF pins pandas to a narrow range; `cudf.pandas` must import *before* `import pandas`; ~95% API coverage with silent CPU fallback; RAPIDS conflicts with PyTorch conda envs; Windows is WSL2-only.
+
+See [[RAPIDS Environment Setup]] for the full `pyproject.toml` and setup scripts.
 
 ---
 

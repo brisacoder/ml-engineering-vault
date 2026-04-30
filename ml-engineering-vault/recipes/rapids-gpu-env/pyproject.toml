@@ -1,0 +1,76 @@
+# ============================================================================
+# RAPIDS 26.4 GPU Environment — CuPy + cuDF + cuML
+# ============================================================================
+# Pins derived from actual wheel METADATA via discover_rapids_versions.py
+# on 2026-04-23. Run the discovery script again before upgrading CalVer.
+# ============================================================================
+[project]
+name = "rapids-gpu-env"
+version = "0.1.0"
+description = "GPU-accelerated data science: CuPy, cuDF, cuML, scikit-learn"
+requires-python = ">=3.12,<3.14"
+# RAPIDS 26.4 dropped Python 3.10. Wheels use cp311-abi3 stable ABI (3.11+).
+dependencies = [
+    # ── RAPIDS core (MUST all share the same CalVer) ──────────────
+    "cudf-cu12~=26.4",
+    "cuml-cu12~=26.4",
+    "cugraph-cu12~=26.4",
+    # ── CuPy (GPU NumPy) ─────────────────────────────────────────
+    # cudf: cupy-cuda12x!=14.0.0,>=13.6.0
+    # cupy 14.0.1 requires numpy>=2.0 — if you need numpy 1.x, pin cupy<14
+    "cupy-cuda12x>=14.0.1,!=14.0.0",
+    # ── pandas — still the tightest constraint ────────────────────
+    # cudf: pandas>=2.0,<2.4.0
+    "pandas>=2.3.3,<2.4.0",
+    # ── numpy ─────────────────────────────────────────────────────
+    # cudf: numpy>=1.26,<3.0  |  cupy 14.0.1: numpy>=2.0,<2.6
+    # If uv resolves cupy 14.x, numpy will land in [2.0, 2.6).
+    # If uv resolves cupy 13.x, numpy can be 1.26+.
+    "numpy>=2.4.4,<3",
+    # ── pyarrow ───────────────────────────────────────────────────
+    # cudf: pyarrow>=19.0.0 (no upper bound)
+    "pyarrow>=24.0.0",
+    # ── numba ─────────────────────────────────────────────────────
+    # cudf: numba>=0.60.0,<0.65.0 + numba-cuda[cu12]>=0.22.2,<0.29.0
+    "numba>=0.64.0,<0.65.0",
+    "numba-cuda[cu12]>=0.28.2,<0.29.0",
+    # ── ML ecosystem ──────────────────────────────────────────────
+    # cuml: scikit-learn>=1.5 (no upper bound)
+    # cuml: scipy>=1.14.0
+    "scikit-learn>=1.8.0",
+    "scipy>=1.17.1",
+    "xgboost>=3.2.0",
+    "catboost>=1.2.10",
+    "statsmodels>=0.14.6",
+    # ── Visualization / utilities ─────────────────────────────────
+    "matplotlib>=3.10.9",
+    "seaborn>=0.13.2",
+    "jupyter>=1.1.1",
+    "ipykernel>=7.2.0",
+]
+# ── NVIDIA PyPI index ─────────────────────────────────────────────
+[[tool.uv.index]]
+name = "nvidia"
+url = "https://pypi.nvidia.com"
+# Force RAPIDS packages to resolve from NVIDIA's index.
+# cupy-cuda12x resolves from regular PyPI.
+[tool.uv.sources]
+cudf-cu12 = { index = "nvidia" }
+cuml-cu12 = { index = "nvidia" }
+cugraph-cu12 = { index = "nvidia" }
+# ── PyTorch (optional) ───────────────────────────────────────────
+# Uncomment if you need PyTorch alongside RAPIDS.
+# Test with `uv lock --dry-run` first — conflict-prone.
+#
+# [[tool.uv.index]]
+# name = "pytorch"
+# url = "https://download.pytorch.org/whl/cu124"
+#
+# Add to dependencies:
+# "torch>=2.2",
+# "torchvision>=0.17",
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+[tool.hatch.build.targets.wheel]
+packages = ["rapids_gpu_env"]

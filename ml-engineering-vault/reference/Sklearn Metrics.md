@@ -13,6 +13,8 @@ related:
   - "[[Sklearn Pipelines and ColumnTransformer]]"
   - "[[Sklearn Feature Scaling]]"
   - "[[Sklearn Decision Function and Thresholds]]"
+  - "[[Sklearn Display API]]"
+  - "[[Sklearn Cross-Validation]]"
 created: 2026-04-22
 updated: 2026-04-22
 ---

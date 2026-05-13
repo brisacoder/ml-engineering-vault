@@ -11,8 +11,9 @@ related:
   - "[[Sklearn Feature Scaling]]"
   - "[[Sklearn Pipelines and ColumnTransformer]]"
   - "[[Sklearn Decision Function and Thresholds]]"
+  - "[[Sklearn GridSearchCV]]"
 created: 2026-04-23
-updated: 2026-04-23
+updated: 2026-05-13
 ---
 
 # Sklearn Cross-Validation
@@ -229,6 +230,114 @@ results = cross_validate(clf, X, y, cv=5, scoring=scoring)
 print(f"test_acc:          {results['test_acc'].mean():.4f}")
 print(f"test_f1_weighted:  {results['test_f1_weighted'].mean():.4f}")
 print(f"test_f1_per_class: {results['test_f1_per_class'].mean():.4f}")
+```
+
+---
+
+## After Cross-Validation — Refit on Full Data
+
+> `cross_validate` answers the question *"how well does this model generalise?"* — it does **not** produce a production model. Each fold estimator saw only ~80% of the data. The fold with the highest score didn't learn better — it got an easier test split. Cherry-picking it is overfitting to the evaluation procedure.
+
+The correct two-step workflow:
+
+1. **Evaluate** with `cross_validate` — check metrics, train/test gap, timing.
+2. **Refit** the same estimator on the **entire** training set — this is what you deploy.
+
+```python
+"""
+Correct workflow: evaluate with CV, then refit on full data.
+"""
+
+from __future__ import annotations
+
+import numpy as np
+from sklearn.datasets import load_digits
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import cross_validate, train_test_split
+
+X, y = load_digits(return_X_y=True)
+
+# Hold out a true test set that CV never touches
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42, stratify=y,
+)
+
+clf = RandomForestClassifier(n_estimators=100, random_state=42)
+
+# ── Step 1: Evaluate via cross-validation ─────────────────────────
+cv_results = cross_validate(
+    clf, X_train, y_train,
+    cv=5,
+    scoring=["accuracy", "f1_macro"],
+    return_train_score=True,
+)
+
+for metric in ["accuracy", "f1_macro"]:
+    train = cv_results[f"train_{metric}"].mean()
+    test = cv_results[f"test_{metric}"].mean()
+    print(f"{metric:>10s}  train={train:.4f}  test={test:.4f}  gap={train - test:.4f}")
+
+# ── Step 2: Satisfied? Refit on ALL training data ─────────────────
+# clf is still unfitted — cross_validate clones internally
+clf.fit(X_train, y_train)
+
+# THIS is the model you use for predictions
+y_pred = clf.predict(X_test)
+print(f"\nHeld-out test accuracy: {np.mean(y_pred == y_test):.4f}")
+```
+
+### Why Not Pick the Best Fold Estimator?
+
+```python
+# ❌ WRONG: cherry-picking the "best" fold
+best_fold = np.argmax(cv_results["test_accuracy"])
+best_model = cv_results["estimator"][best_fold]  # trained on ~80% of X_train
+y_pred = best_model.predict(X_test)               # using a partial model
+
+# ✅ RIGHT: refit on full training set
+clf.fit(X_train, y_train)                          # trained on 100% of X_train
+y_pred = clf.predict(X_test)                       # using all available data
+```
+
+Three reasons the fold estimator is the wrong choice:
+
+- **Less data** — it only saw 4/5 of `X_train`. More data → better model, always (assuming the model isn't already saturated).
+- **Selection bias** — picking the highest-scoring fold is optimising on evaluation variance, not model quality. With 5 folds you're effectively selecting the max of 5 correlated random variables.
+- **Non-reproducible** — the "best fold" changes with different random seeds or CV splits. Your production model shouldn't depend on which 20% happened to be held out.
+
+### When return_estimator IS Useful
+
+The fold estimators aren't useless — they're just not for prediction. Legitimate uses:
+
+- **Inspecting per-fold variation**: compare `feature_importances_` across folds to check stability.
+- **Ensemble trick** (rare): average predictions from all fold estimators as a poor-man's bagging — but if you want bagging, just use `BaggingClassifier`.
+- **Debugging**: if one fold scores much worse, inspect that fold's estimator and its training indices to understand why.
+
+### If You Want Hyperparameter Search + Automatic Refit
+
+`cross_validate` evaluates a **single** configuration. If you want to search over hyperparameters and automatically refit the best configuration on full data, use [[Sklearn GridSearchCV]] or `RandomizedSearchCV` — they do CV + refit in one shot:
+
+```python
+from sklearn.model_selection import GridSearchCV
+
+param_grid = {
+    "n_estimators": [50, 100, 200],
+    "max_depth": [None, 10, 20],
+}
+
+search = GridSearchCV(
+    RandomForestClassifier(random_state=42),
+    param_grid,
+    cv=5,
+    scoring="accuracy",
+    refit=True,          # ← automatically refits best params on full X_train
+)
+search.fit(X_train, y_train)
+
+# search.best_estimator_ is already fitted on ALL of X_train
+y_pred = search.best_estimator_.predict(X_test)
+print(f"Best params: {search.best_params_}")
+print(f"Test accuracy: {np.mean(y_pred == y_test):.4f}")
 ```
 
 ---

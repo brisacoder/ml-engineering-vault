@@ -11,6 +11,7 @@ related:
   - "[[Vectorization Expressiveness Limits]]"
   - "[[NumPy Pandas Vectorization]]"
   - "[[GPU Library Decision Guide]]"
+  - "[[JIT Compilation Mechanics]]"
 created: 2026-05-14
 updated: 2026-05-14
 ---
@@ -249,3 +250,5 @@ benchmark(numexpr_quadratic, a, b, c, label="NumExpr (5M)")
 For single-pass alternatives that solve this bottleneck, see [[Beyond NumPy - NumExpr Numba JAX]].
 For patterns that vectorise well in NumPy, see [[Accelerated Python - CPU Vectorization]].
 For GPU alternatives, see [[GPU Library Decision Guide]].
+For the paradigm that motivates all of this, see [[Array-Oriented Programming]].
+For array-thinking techniques (shifted arrays, reshape tricks), see [[NumPy Array Thinking Patterns]].

@@ -11,6 +11,11 @@ related:
   - "[[Accelerated Python - GPU Acceleration]]"
   - "[[GPU Library Decision Guide]]"
   - "[[Pandas Plotting]]"
+  - "[[NumPy Multi-Pass Bottleneck]]"
+  - "[[Beyond NumPy - NumExpr Numba JAX]]"
+  - "[[Vectorization Expressiveness Limits]]"
+  - "[[Array-Oriented Programming]]"
+  - "[[NumPy Array Thinking Patterns]]"
 source: "Summary table from accelerated_python_part1_cpu.ipynb"
 created: 2026-04-22
 updated: 2026-04-22
@@ -71,3 +76,5 @@ updated: 2026-04-22
 
 For worked examples of every row, see [[Accelerated Python - CPU Vectorization]].
 For the GPU equivalents, see [[Accelerated Python - GPU Acceleration]].
+For why NumPy still has a performance ceiling, see [[NumPy Multi-Pass Bottleneck]].
+For algorithms that can't be vectorised at all, see [[Vectorization Expressiveness Limits]].

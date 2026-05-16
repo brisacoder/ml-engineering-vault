@@ -13,6 +13,11 @@ related:
   - "[[Pandas Plotting]]"
   - "[[NumPy Pandas Vectorization]]"
   - "[[GPU Library Decision Guide]]"
+  - "[[NumPy Multi-Pass Bottleneck]]"
+  - "[[Beyond NumPy - NumExpr Numba JAX]]"
+  - "[[Vectorization Expressiveness Limits]]"
+  - "[[Array-Oriented Programming]]"
+  - "[[NumPy Array Thinking Patterns]]"
 source: "Notebook — accelerated_python_part1_cpu.ipynb"
 created: 2026-04-22
 updated: 2026-04-22
@@ -84,4 +89,4 @@ CI scripts, metrics pipelines, config validation, release tooling.
 
 > If you're writing a `for` loop over a list and the loop body is a pure transformation (no I/O, no external state), NumPy/Pandas will be faster **and** shorter.
 
-See [[NumPy Pandas Vectorization]] for the full cheat sheet table, and [[Accelerated Python - GPU Acceleration]] for the GPU counterpart using CuPy and cuDF.
+See [[NumPy Pandas Vectorization]] for the full cheat sheet table, [[Accelerated Python - GPU Acceleration]] for the GPU counterpart using CuPy and cuDF, and [[NumPy Multi-Pass Bottleneck]] for why NumPy still leaves performance on the table (and how [[Beyond NumPy - NumExpr Numba JAX|NumExpr, Numba, and JAX]] fix it). For algorithms that resist vectorization entirely, see [[Vectorization Expressiveness Limits]].

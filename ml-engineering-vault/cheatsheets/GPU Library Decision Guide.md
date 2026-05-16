@@ -12,6 +12,8 @@ related:
   - "[[Accelerated Python - GPU Acceleration]]"
   - "[[Accelerated Python - CPU Vectorization]]"
   - "[[NumPy Pandas Vectorization]]"
+  - "[[NumPy Multi-Pass Bottleneck]]"
+  - "[[Beyond NumPy - NumExpr Numba JAX]]"
 source: "Summary from accelerated_python_part2_gpu.ipynb"
 created: 2026-04-22
 updated: 2026-04-22

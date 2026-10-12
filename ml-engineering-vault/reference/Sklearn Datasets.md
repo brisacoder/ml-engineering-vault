@@ -10,8 +10,9 @@ related:
   - "[[Sklearn Feature Scaling]]"
   - "[[Pandas Plotting]]"
   - "[[Sklearn Metrics]]"
+  - "[[NumPy Quantile Binning]]"
 created: 2026-04-22
-updated: 2026-04-22
+updated: 2026-08-27
 ---
 
 # Sklearn Datasets

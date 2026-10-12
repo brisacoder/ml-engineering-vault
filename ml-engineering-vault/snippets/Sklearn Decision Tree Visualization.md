@@ -9,12 +9,13 @@ tags:
   - "task/classification"
 related:
   - "[[Sklearn Decision Function and Thresholds]]"
+  - "[[Gradient Boosting Step by Step]]"
   - "[[Sklearn Cross-Validation]]"
   - "[[Sklearn Display API]]"
   - "[[Sklearn Datasets]]"
   - "[[Pandas Plotting]]"
 created: 2026-05-13
-updated: 2026-05-13
+updated: 2026-09-29
 ---
 
 # Sklearn Decision Tree Visualization
@@ -24,6 +25,8 @@ updated: 2026-05-13
 ---
 
 ## Text Representation with `export_text`
+
+> Also works on each `DecisionTreeRegressor` inside a fitted `GradientBoosting*` model (`model.estimators_[m, 0]`); [[Gradient Boosting Step by Step]] uses it to read boosted trees round by round.
 
 > Print the tree as indented if/else rules — ideal for logging, quick debugging, or pasting into documentation where graphics aren't practical.
 

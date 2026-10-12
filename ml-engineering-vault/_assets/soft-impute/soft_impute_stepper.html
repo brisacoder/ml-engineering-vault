@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Soft-impute stepper</title>
+<style>
+:root{
+  --page:#faf9f5;--surface-1:#f1efe8;--surface-2:#ffffff;
+  --text-primary:#1f1e1d;--text-secondary:#5f5e5a;
+  --border:#d3d1c7;--border-strong:#b4b2a9;
+  --bg-warning:#faeeda;--text-warning:#854f0b;
+  --bg-accent:#e6f1fb;--text-accent:#185fa5;
+  --radius:8px;
+  --font-sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --font-mono:ui-monospace,"Cascadia Mono","SF Mono",Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --page:#1f1e1d;--surface-1:#2c2c2a;--surface-2:#262624;
+    --text-primary:#f1efe8;--text-secondary:#b4b2a9;
+    --border:#444441;--border-strong:#5f5e5a;
+    --bg-warning:#412402;--text-warning:#fac775;
+    --bg-accent:#042c53;--text-accent:#85b7eb;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--text-primary);font-family:var(--font-sans);line-height:1.6}
+main{max-width:760px;margin:0 auto;padding:24px 16px 40px}
+h1{font-size:22px;font-weight:500;margin:0 0 4px}
+p.sub{margin:0 0 18px;color:var(--text-secondary);font-size:14px}
+code{font-family:var(--font-mono);font-size:13px}
+button{font:inherit;font-size:14px;color:var(--text-primary);background:transparent;border:0.5px solid var(--border-strong);border-radius:var(--radius);padding:6px 14px;cursor:pointer}
+button:hover{background:var(--surface-1)}
+button:active{transform:scale(0.98)}
+input[type=range]{accent-color:#7F77DD;vertical-align:middle}
+.si-row{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-bottom:12px;font-size:14px;color:var(--text-secondary)}
+.si-row input[type=range]{width:150px}
+.si-ro{font-family:var(--font-mono);color:var(--text-primary);min-width:36px;display:inline-block}
+.si-panels{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+@media (max-width:620px){.si-panels,.si-metrics{grid-template-columns:minmax(0,1fr)!important}}
+#bars{display:block;max-width:280px;margin:0 auto}
+.si-card{background:var(--surface-2);border:0.5px solid var(--border);border-radius:12px;padding:10px 12px}
+.si-h{font-size:13px;color:var(--text-secondary);margin-bottom:8px}
+.si-m{display:grid;grid-template-columns:repeat(4,1fr);gap:3px}
+.si-c{font-family:var(--font-mono);font-size:12px;text-align:center;padding:6px 0;border-radius:4px;background:var(--surface-1);color:var(--text-secondary)}
+.si-c.h{background:var(--bg-warning);color:var(--text-warning);font-weight:500}
+.si-c.o{background:var(--bg-accent);color:var(--text-accent)}
+.si-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:12px 0}
+.si-mc{background:var(--surface-1);border-radius:var(--radius);padding:10px 14px}
+.si-mc .l{font-size:13px;color:var(--text-secondary)}
+.si-mc .v{font-size:22px;font-weight:500;color:var(--text-primary);font-family:var(--font-mono)}
+.si-leg{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--text-secondary);margin-top:6px}
+.si-leg span i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+.algo{margin-top:16px}
+.algo pre{margin:0;font-family:var(--font-mono);font-size:13px;line-height:1.55;white-space:pre-wrap;color:var(--text-primary)}
+</style>
+</head>
+<body>
+<main>
+<h1>Soft-impute on a 4×4 rank-1 matrix</h1>
+<p class="sub">Truth <code>X = u vᵀ</code>, <code>u = [1,2,3,4]</code>, <code>v = [2,1,3,2]</code>, four cells hidden. Objective: <code>min ½‖P<sub>Ω</sub>(X − Z)‖²<sub>F</sub> + λ‖Z‖<sub>*</sub></code></p>
+
+<div class="si-row">
+  <label>λ <input id="lam" type="range" min="0.1" max="12" step="0.1" value="0.5"> <span class="si-ro" id="lamv"></span></label>
+  <label>iteration k <input id="it" type="range" min="1" max="40" step="1" value="1"> <span class="si-ro" id="itv"></span></label>
+  <button id="stepb">Step</button><button id="playb">Play</button>
+</div>
+
+<div class="si-panels">
+  <div class="si-card"><div class="si-h">1. F⁽ᵏ⁾ fed to SVD</div><div class="si-m" id="mF"></div></div>
+  <div class="si-card"><div class="si-h">2-3. σ (gray) → shrunk σ (purple)</div><svg id="bars" viewBox="0 0 200 150" width="100%"></svg></div>
+  <div class="si-card"><div class="si-h">4. Z⁽ᵏ⁾ = U Σλ Vᵀ</div><div class="si-m" id="mZ"></div></div>
+</div>
+<div class="si-leg">
+  <span><i style="background:var(--bg-warning)"></i>hole, current guess</span>
+  <span><i style="background:var(--surface-1)"></i>observed, copied from X</span>
+  <span><i style="background:var(--bg-accent)"></i>observed, but Z disagrees with X by &gt; 0.25</span>
+</div>
+
+<div class="si-metrics">
+  <div class="si-mc"><div class="l">rank(Z)</div><div class="v" id="rk"></div></div>
+  <div class="si-mc"><div class="l">RMSE on holes</div><div class="v" id="rm"></div></div>
+  <div class="si-mc"><div class="l">relative change on holes</div><div class="v" id="ch"></div></div>
+</div>
+
+<div class="si-card">
+  <div class="si-h">Hole values across iterations (dashed = truth)</div>
+  <svg id="lines" viewBox="0 0 640 200" width="100%"></svg>
+  <div class="si-leg" id="lleg"></div>
+</div>
+
+<div class="si-card algo">
+  <div class="si-h">Pseudo code</div>
+<pre>Z ← 0
+repeat:
+    F ← where(observed, X, Z)        # 1. fill holes with current guess
+    U, σ, Vᵀ ← svd(F)                # 2. decompose
+    σλ ← max(σ − λ, 0)               # 3. soft-threshold singular values
+    Z ← U · diag(σλ) · Vᵀ            # 4. rebuild low-rank matrix
+until ‖Z − F‖² / ‖F‖² &lt; ε on the holes   # F still holds the previous holes
+return where(observed, X, Z)          # Z is only trusted on the holes</pre>
+</div>
+</main>
+
+<script>
+"use strict";
+const X = [[2,1,3,2],[4,2,6,4],[6,3,9,6],[8,4,12,8]];
+const H = [[0,2],[1,0],[2,3],[3,1]];
+const COLS = ["#378ADD","#1D9E75","#D85A30","#7F77DD"];
+const K = 40, n = 4;
+const miss = X.map(r => r.map(() => false));
+H.forEach(([i,j]) => { miss[i][j] = true; });
+
+const mul = (A,B) => A.map(r => B[0].map((_,j) => r.reduce((a,x,k) => a + x*B[k][j], 0)));
+const tr = A => A[0].map((_,j) => A.map(r => r[j]));
+
+// Cyclic Jacobi eigen-decomposition of a symmetric n×n matrix.
+function eigSym(S){
+  const a = S.map(r => r.slice());
+  const V = a.map((r,i) => r.map((_,j) => i === j ? 1 : 0));
+  for (let sw = 0; sw < 60; sw++){
+    let off = 0;
+    for (let p = 0; p < n; p++) for (let q = p+1; q < n; q++) off += a[p][q]*a[p][q];
+    if (off < 1e-20) break;
+    for (let p = 0; p < n; p++) for (let q = p+1; q < n; q++){
+      if (Math.abs(a[p][q]) < 1e-14) continue;
+      const th = (a[q][q] - a[p][p]) / (2*a[p][q]);
+      const t = (th >= 0 ? 1 : -1) / (Math.abs(th) + Math.sqrt(th*th + 1));
+      const c = 1/Math.sqrt(t*t + 1), s = t*c;
+      for (let k = 0; k < n; k++){ const x = a[k][p], y = a[k][q]; a[k][p] = c*x - s*y; a[k][q] = s*x + c*y; }
+      for (let k = 0; k < n; k++){ const x = a[p][k], y = a[q][k]; a[p][k] = c*x - s*y; a[q][k] = s*x + c*y; }
+      for (let k = 0; k < n; k++){ const x = V[k][p], y = V[k][q]; V[k][p] = c*x - s*y; V[k][q] = s*x + c*y; }
+    }
+  }
+  return { w: a.map((r,i) => r[i]), V };
+}
+
+// Soft-impute. SVD via eig(FᵀF): σ = sqrt(eig), and
+// U diag(σλ) Vᵀ = F · V diag(σλ/σ) Vᵀ, so U is never formed explicitly.
+function run(lam){
+  let Z = X.map(r => r.map(() => 0));
+  const out = [];
+  for (let k = 0; k < K; k++){
+    const F = X.map((r,i) => r.map((x,j) => miss[i][j] ? Z[i][j] : x));
+    const { w, V } = eigSym(mul(tr(F), F));
+    const s = w.map(x => Math.sqrt(Math.max(x, 0)));
+    const st = s.map(x => Math.max(x - lam, 0));
+    const M = V.map((_,a) => V.map((_,b) =>
+      s.reduce((acc,si,i) => acc + (si > 1e-12 ? V[a][i]*V[b][i]*st[i]/si : 0), 0)));
+    Z = mul(F, M);
+    // Only the holes carry state between iterations, and F already holds the
+    // previous hole values, so the stop test needs no second copy of Z.
+    const num = H.reduce((a,[i,j]) => a + (Z[i][j] - F[i][j])**2, 0);
+    const den = H.reduce((a,[i,j]) => a + F[i][j]**2, 0);
+    const ord = [0,1,2,3].sort((p,q) => s[q] - s[p]);
+    out.push({ F, Z, s: ord.map(i => s[i]), st: ord.map(i => st[i]), chg: den > 0 ? num/den : null });
+  }
+  return out;
+}
+
+const $ = id => document.getElementById(id);
+let R = [], timer = null;
+
+function grid(el, M, isZ){
+  el.innerHTML = M.map((r,i) => r.map((v,j) => {
+    let c = "si-c";
+    if (miss[i][j]) c += " h";
+    else if (isZ && Math.abs(v - X[i][j]) > 0.25) c += " o";
+    return `<div class="${c}">${v.toFixed(miss[i][j] ? 2 : 1)}</div>`;
+  }).join("")).join("");
+}
+
+function bars(s, st, lam){
+  const ymax = 24, y = v => 130 - Math.min(v, ymax)/ymax*120;
+  let g = "";
+  s.forEach((v,i) => {
+    const x = 22 + i*44;
+    g += `<rect x="${x}" y="${y(v)}" width="30" height="${130-y(v)}" fill="#B4B2A9" opacity="0.55" rx="2"/>`;
+    if (st[i] > 0) g += `<rect x="${x+6}" y="${y(st[i])}" width="18" height="${130-y(st[i])}" fill="#7F77DD" rx="2"/>`;
+    g += `<text x="${x+15}" y="146" text-anchor="middle" style="fill:var(--text-secondary);font-size:11px">${v.toFixed(1)}</text>`;
+  });
+  const ly = y(lam);
+  g += `<line x1="14" x2="196" y1="${ly}" y2="${ly}" stroke="#E24B4A" stroke-dasharray="4 3" stroke-width="1.2"/>`;
+  g += `<text x="196" y="${ly-4}" text-anchor="end" style="fill:#E24B4A;font-size:11px">λ</text>`;
+  g += `<line x1="14" x2="196" y1="130" y2="130" stroke="var(--border-strong)" stroke-width="0.5"/>`;
+  $("bars").innerHTML = g;
+}
+
+function lines(k){
+  const x = i => 40 + i/K*585, y = v => 180 - v/13*165;
+  let g = "";
+  [0,4,8,12].forEach(v => {
+    g += `<line x1="40" x2="625" y1="${y(v)}" y2="${y(v)}" stroke="var(--border)" stroke-width="0.5"/>`;
+    g += `<text x="32" y="${y(v)+4}" text-anchor="end" style="fill:var(--text-secondary);font-size:11px">${v}</text>`;
+  });
+  [0,10,20,30,40].forEach(v => {
+    g += `<text x="${x(v)}" y="196" text-anchor="middle" style="fill:var(--text-secondary);font-size:11px">${v}</text>`;
+  });
+  H.forEach(([i,j],h) => {
+    const pts = [[0,0]].concat(R.map((r,t) => [t+1, r.Z[i][j]]));
+    g += `<line x1="40" x2="625" y1="${y(X[i][j])}" y2="${y(X[i][j])}" stroke="${COLS[h]}" stroke-dasharray="5 4" stroke-width="1" opacity="0.7"/>`;
+    g += `<polyline fill="none" stroke="${COLS[h]}" stroke-width="2" points="${pts.map(p => x(p[0]) + "," + y(p[1])).join(" ")}"/>`;
+    g += `<circle cx="${x(k)}" cy="${y(R[k-1].Z[i][j])}" r="4" fill="${COLS[h]}"/>`;
+  });
+  g += `<line x1="${x(k)}" x2="${x(k)}" y1="12" y2="180" stroke="var(--border-strong)" stroke-width="1"/>`;
+  $("lines").innerHTML = g;
+}
+
+function render(){
+  const lam = +$("lam").value, k = +$("it").value, r = R[k-1];
+  $("lamv").textContent = lam.toFixed(1);
+  $("itv").textContent = k;
+  grid($("mF"), r.F, false);
+  grid($("mZ"), r.Z, true);
+  bars(r.s, r.st, lam);
+  $("rk").textContent = r.st.filter(v => v > 1e-9).length;
+  $("rm").textContent = Math.sqrt(H.reduce((a,[i,j]) => a + (r.Z[i][j] - X[i][j])**2, 0)/H.length).toFixed(3);
+  $("ch").textContent = r.chg === null ? "n/a (holes were 0)" : r.chg < 1e-6 ? "<1e-6" : r.chg.toExponential(1);
+  lines(k);
+}
+
+function recompute(){ R = run(+$("lam").value); render(); }
+function stop(){ clearInterval(timer); timer = null; $("playb").textContent = "Play"; }
+
+$("lam").addEventListener("input", recompute);
+$("it").addEventListener("input", () => { stop(); render(); });
+$("stepb").addEventListener("click", () => { stop(); const e = $("it"); e.value = Math.min(K, +e.value + 1); render(); });
+$("playb").addEventListener("click", () => {
+  if (timer){ stop(); return; }
+  const e = $("it");
+  if (+e.value >= K) e.value = 1;
+  $("playb").textContent = "Pause";
+  timer = setInterval(() => {
+    if (+e.value >= K){ stop(); return; }
+    e.value = +e.value + 1; render();
+  }, 180);
+});
+$("lleg").innerHTML = H.map(([i,j],h) =>
+  `<span><i style="background:${COLS[h]}"></i>X[${i},${j}] truth ${X[i][j]}</span>`).join("");
+recompute();
+</script>
+</body>
+</html>

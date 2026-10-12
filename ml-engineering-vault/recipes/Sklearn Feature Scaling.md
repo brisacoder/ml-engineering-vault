@@ -10,8 +10,9 @@ related:
   - "[[Sklearn Advanced Imputation]]"
   - "[[Sklearn validate_data]]"
   - "[[Sklearn Pipelines and ColumnTransformer]]"
+  - "[[NumPy Quantile Binning]]"
 created: 2026-04-22
-updated: 2026-04-22
+updated: 2026-08-27
 ---
 
 # Sklearn Feature Scaling
@@ -167,6 +168,8 @@ X_scaled = scaler.fit_transform(X_train)
 
 - Data has significant outliers you want to keep (not remove).
 - You want centering + scaling without letting outliers dominate.
+
+`quantile_range` is computed with the same value-threshold logic as `np.quantile` — see [[NumPy Quantile Binning]] for how ties get resolved when you need the actual cut points instead of just the IQR.
 
 ---
 

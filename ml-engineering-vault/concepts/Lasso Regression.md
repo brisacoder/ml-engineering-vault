@@ -13,8 +13,10 @@ related:
   - "[[Sklearn Cross-Validation]]"
   - "[[Sklearn Pipelines and ColumnTransformer]]"
   - "[[Elastic Net]]"
+  - "[[Multinomial Logistic Regression]]"
+  - "[[Matrix Completion and Soft-Impute]]"
 created: 2026-04-29
-updated: 2026-04-29
+updated: 2026-10-12
 ---
 
 # Lasso Regression
@@ -200,6 +202,53 @@ $$
 $$
 
 This is elegant: $\rho_j$ tells you where the data wants to push $w_j$. If that push is weaker than $2\alpha$, the weight is zeroed. If stronger, it's shrunk by exactly $2\alpha$ toward zero.
+
+#### Same Operator, Applied to Singular Values
+
+Soft-thresholding is not specific to regression weights. Write a matrix as $USV^T$ and penalize the sum of its singular values (the nuclear norm $\lVert Z\rVert_*$) instead of the sum of absolute weights: in the SVD basis the problem $\min_Z\tfrac12\lVert Z-A\rVert_F^2+\lambda\lVert Z\rVert_*$ splits into one scalar Lasso problem per singular value, and the answer is $s_i\leftarrow\max(s_i-\lambda,0)$. Weak singular values become exact zeros (low rank, the analogue of sparse weights) and strong ones are shrunk by $\lambda$ (the analogue of Lasso's bias). That operator is step 3 of soft-impute: [[Matrix Completion and Soft-Impute]].
+
+```python
+"""
+The soft-threshold operator from coordinate descent, reused on a matrix.
+Lasso:      w_j  <- sign(rho_j) * max(|rho_j| - t, 0)       (one weight)
+Soft-impute: s_i <- max(s_i - lam, 0)                       (one singular value)
+Rotate into the SVD basis, soft-threshold the diagonal, rotate back: the
+matrix problem  min 0.5*||Z - A||_F^2 + lam*||Z||_*  is p independent
+scalar Lasso problems in that basis. Shown on centered Iris.
+"""
+
+from __future__ import annotations
+
+import numpy as np
+from sklearn.datasets import load_iris
+
+
+def soft_threshold(x: np.ndarray, t: float) -> np.ndarray:
+    """Vectorized prox of t*|x|: shrink toward 0 by t, exact zeros inside [-t, t]."""
+    return np.sign(x) * np.maximum(np.abs(x) - t, 0.0)
+
+
+X = load_iris().data
+A = X - X.mean(axis=0)
+U, s, Vt = np.linalg.svd(A, full_matrices=False)
+
+lam = 4.0
+Z = (U * soft_threshold(s, lam)) @ Vt                        # singular value thresholding
+
+print("singular values of A:   ", np.round(s, 3))
+print("soft_threshold(s, 4.0): ", np.round(soft_threshold(s, lam), 3))
+print("singular values of Z:   ", np.round(np.linalg.svd(Z, compute_uv=False), 3))
+
+# Same picture as Lasso: weak 'coefficients' (here s_3, s_4) become exact zeros
+print("rank(A) =", np.linalg.matrix_rank(A), "-> rank(Z) =", np.linalg.matrix_rank(Z))
+```
+
+```text
+singular values of A:    [25.1    6.013  3.414  1.885]
+soft_threshold(s, 4.0):  [21.1    2.013  0.     0.   ]
+singular values of Z:    [21.1    2.013  0.     0.   ]
+rank(A) = 4 -> rank(Z) = 2
+```
 
 ### Coordinate Descent — `cd_fast.pyx`
 

@@ -16,9 +16,10 @@ related:
   - "[[Vectorization Expressiveness Limits]]"
   - "[[Array-Oriented Programming]]"
   - "[[NumPy Array Thinking Patterns]]"
+  - "[[NumPy Quantile Binning]]"
 source: "Summary table from accelerated_python_part1_cpu.ipynb"
 created: 2026-04-22
-updated: 2026-04-22
+updated: 2026-08-27
 ---
 
 # NumPy & Pandas Vectorization Cheat Sheet
@@ -71,6 +72,8 @@ updated: 2026-04-22
 | Clip + normalise | `np.clip(arr, lo, hi)` | `s.clip(lo, hi)` |
 | Config diff | — | `df.compare(df2)` |
 | IP range classification | `np.vectorize(ip_to_int)` + masks | — |
+| Quantile groups (equal-count) | `np.array_split(sorted_arr, k)` | `pd.qcut(s, q=k)` |
+| Quantile groups (value threshold) | `np.searchsorted(sorted_arr, np.quantile(sorted_arr, edges))` | `pd.cut(s, bins=edges)` |
 
 ---
 
@@ -78,3 +81,4 @@ For worked examples of every row, see [[Accelerated Python - CPU Vectorization]]
 For the GPU equivalents, see [[Accelerated Python - GPU Acceleration]].
 For why NumPy still has a performance ceiling, see [[NumPy Multi-Pass Bottleneck]].
 For algorithms that can't be vectorised at all, see [[Vectorization Expressiveness Limits]].
+For the equal-count vs. value-threshold distinction (and the tie-handling gotchas behind both rows above), see [[NumPy Quantile Binning]].

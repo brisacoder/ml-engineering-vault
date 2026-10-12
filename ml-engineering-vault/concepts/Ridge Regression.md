@@ -12,8 +12,9 @@ related:
   - "[[Sklearn Cross-Validation]]"
   - "[[Sklearn Pipelines and ColumnTransformer]]"
   - "[[Lasso Regression]]"
+  - "[[Multinomial Logistic Regression]]"
 created: 2026-04-29
-updated: 2026-04-29
+updated: 2026-08-15
 ---
 
 # Ridge Regression

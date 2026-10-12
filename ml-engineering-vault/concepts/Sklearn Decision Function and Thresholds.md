@@ -10,8 +10,9 @@ related:
   - "[[Sklearn Metrics]]"
   - "[[Sklearn Datasets]]"
   - "[[Sklearn Pipelines and ColumnTransformer]]"
+  - "[[Multinomial Logistic Regression]]"
 created: 2026-04-22
-updated: 2026-04-22
+updated: 2026-08-15
 ---
 
 # Sklearn Decision Function and Thresholds

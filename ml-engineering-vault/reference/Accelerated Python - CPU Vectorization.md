@@ -18,9 +18,10 @@ related:
   - "[[Vectorization Expressiveness Limits]]"
   - "[[Array-Oriented Programming]]"
   - "[[NumPy Array Thinking Patterns]]"
+  - "[[NumPy Quantile Binning]]"
 source: "Notebook — accelerated_python_part1_cpu.ipynb"
 created: 2026-04-22
-updated: 2026-04-22
+updated: 2026-08-27
 ---
 
 # Accelerated Python — CPU Vectorization
@@ -82,6 +83,7 @@ CI scripts, metrics pipelines, config validation, release tooling.
 | 16 | Clip, min-max scale, percentile rank | `np.clip`, `Series.rank(pct=True)` |
 | 17 | Config diff between two snapshots | `DataFrame.compare` |
 | 18 | IP address validation & CIDR range check | `np.vectorize(ip_to_int)` + integer mask arithmetic |
+| 19 | Quantile/percentile-based grouping of a sorted array | `np.array_split` (equal-count) vs. `np.quantile` + `np.searchsorted` (value threshold) |
 
 ---
 
@@ -89,4 +91,4 @@ CI scripts, metrics pipelines, config validation, release tooling.
 
 > If you're writing a `for` loop over a list and the loop body is a pure transformation (no I/O, no external state), NumPy/Pandas will be faster **and** shorter.
 
-See [[NumPy Pandas Vectorization]] for the full cheat sheet table, [[Accelerated Python - GPU Acceleration]] for the GPU counterpart using CuPy and cuDF, and [[NumPy Multi-Pass Bottleneck]] for why NumPy still leaves performance on the table (and how [[Beyond NumPy - NumExpr Numba JAX|NumExpr, Numba, and JAX]] fix it). For algorithms that resist vectorization entirely, see [[Vectorization Expressiveness Limits]].
+See [[NumPy Pandas Vectorization]] for the full cheat sheet table, [[Accelerated Python - GPU Acceleration]] for the GPU counterpart using CuPy and cuDF, and [[NumPy Multi-Pass Bottleneck]] for why NumPy still leaves performance on the table (and how [[Beyond NumPy - NumExpr Numba JAX|NumExpr, Numba, and JAX]] fix it). For algorithms that resist vectorization entirely, see [[Vectorization Expressiveness Limits]]. For row 19 worked all the way through, including where `pd.qcut` silently gives you fewer bins than you asked for, see [[NumPy Quantile Binning]].
